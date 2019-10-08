@@ -1,0 +1,111 @@
+# This Kubernetes YAML file is my first successful test of an
+# ingress controller that routes to two different deployed pods
+# based upon the URI path. The example was derived from the
+# Kubernetes example at the following web address:
+#
+#   https://kubernetes.io/docs/tasks/access-application-cluster/ingress-minikube/
+#
+# This example was tested on minikube which requires updating the
+# /etc/hosts file on the VM that is running minikube.  You first need
+# to execute this command:
+#   kubectl apply -f ingress-test.yaml
+# Then repeat entering this command until an IP address is created:
+#   kubectl get ingress
+# and wait for the command output to include the minikube IP address.
+#
+# Once you have the minikube IP addr and the service port the ingress
+# controller is exposed on, update the /etc/hosts file on the VM
+# running minikube and add a new line to the end like:
+#    <aa.bb.cc.dd> hello-world.info
+#
+# Then on the VM, you can access the ingress controller with the
+# following URIs to access different backend pods:
+#    curl hello-world.info/v1
+#    curl hello-world.info/v2
+#
+# To delete the ingress exampl, enter the following command:
+#    kubectl delete -f ingress-test.yaml
+#
+#
+---
+ apiVersion: extensions/v1beta1
+ kind: Deployment
+ metadata:
+   name: web
+ spec:
+   replicas: 1
+   template:
+     metadata:
+       labels:
+         app: web
+     spec:
+       containers:
+         - name: web-container
+           image: gcr.io/google-samples/hello-app:1.0
+           ports:
+             - containerPort: 8080
+---
+ apiVersion: v1
+ kind: Service
+ metadata:
+   name: web-service
+   labels:
+     app: web
+ spec:
+   type: NodePort
+   ports:
+   - port: 8080
+     protocol: TCP
+   selector:
+     app: web
+---
+ apiVersion: extensions/v1beta1
+ kind: Deployment
+ metadata:
+   name: web2
+ spec:
+   replicas: 1
+   template:
+     metadata:
+       labels:
+         app: web2
+     spec:
+       containers:
+         - name: web-container
+           image: gcr.io/google-samples/hello-app:2.0
+           ports:
+             - containerPort: 8080
+---
+ apiVersion: v1
+ kind: Service
+ metadata:
+   name: web-service2
+   labels:
+     app: web2
+ spec:
+   type: NodePort
+   ports:
+   - port: 8080
+     protocol: TCP
+   selector:
+     app: web2
+---
+ apiVersion: networking.k8s.io/v1beta1 # for versions before 1.14 use extensions/v1beta1
+ kind: Ingress
+ metadata:
+   name: ingress-test
+   annotations:
+     nginx.ingress.kubernetes.io/rewrite-target: /$1
+ spec:
+   rules:
+   - host: hello-world.info
+     http:
+       paths:
+       - path: /*
+         backend:
+           serviceName: web-service
+           servicePort: 8080
+       - path: /v2/*
+         backend:
+           serviceName: web-service2
+           servicePort: 8080
