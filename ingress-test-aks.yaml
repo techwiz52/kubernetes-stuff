@@ -1,18 +1,31 @@
 # This Kubernetes YAML file is my first successful test of an
-# ingress controller that routes to two different deployed pods
-# based upon the URI path. The example was derived from the
-# Kubernetes example at the following web address:
+# ingress controller using AKS that routes to two different
+# deployed pods based upon the URI path. The example was derived
+# from the Kubernetes example at the following web address:
 #
 #   https://kubernetes.io/docs/tasks/access-application-cluster/ingress-minikube/
 #
-# This example was tested on minikube which requires updating the
-# /etc/hosts file on the VM that is running minikube.  You first need
-# to execute this command:
-#   kubectl apply -f ingress-test.yaml
-# Then repeat entering this command until an IP address is created:
-#   kubectl get ingress
-# and wait for the command output to include the minikube IP address.
+# Azure documentation was also used in order to deploy the ingress
+# test to an AKS, using the following 2 URLs:
+#   https://docs.microsoft.com/en-us/azure/aks/ingress-basic
+#   https://docs.microsoft.com/en-us/azure/aks/kubernetes-helm
 #
+# You first need to execute some helm commands to install the
+# nginx-ingress controller:
+#   kubectl apply -f helm-rbac-aks.yaml
+#   helm init --history-max 200 --service-account tiller --node-selectors "beta.kubernetes.io/os=linux"
+#   helm install stable/nginx-ingress \
+#   --set controller.nodeSelector."beta\.kubernetes\.io/os"=linux \
+#   --set defaultBackend.nodeSelector."beta\.kubernetes\.io/os"=linux
+#
+# Then repeat entering this command until an external IP address is created:
+#   kubectl get service
+#
+# Then run the following command to create the 2 web application services
+# and the ingress service mapping:
+#
+#   kubectl apply -f ingress-test-aks.yaml
+
 # Once you have the minikube IP addr and the service port the ingress
 # controller is exposed on, update the /etc/hosts file on the VM
 # running minikube and add a new line to the end like:
@@ -20,11 +33,11 @@
 #
 # Then on the VM, you can access the ingress controller with the
 # following URIs to access different backend pods:
-#    curl hello-world.info/v1
-#    curl hello-world.info/v2
+#    curl <External IP>/v1
+#    curl <External IP>/v2
 #
 # To delete the ingress exampl, enter the following command:
-#    kubectl delete -f ingress-test.yaml
+#    kubectl delete -f ingress-test-aks.yaml
 #
 #
 ---
